@@ -55,6 +55,65 @@ Do not:
 
 The Boy Scout principle applies to every change, no matter how small.
 
+## Naming conventions
+
+### PascalCase for all public members
+
+Always use PascalCase for public and protected members.
+
+Rules:
+- Classes: `CustomerService`, `OrderRepository`
+- Interfaces: `IOrderService`, `ICustomerRepository`
+- Methods: `GetCustomerById`, `ProcessOrder`
+- Properties: `FirstName`, `TotalAmount`, `IsActive`
+- Public fields (avoid if possible): `DefaultTimeout`
+- Enums: `OrderStatus`, `UserRole`
+- Enum values: `OrderStatus.Pending`, `UserRole.Administrator`
+- Constants: `MaxRetryCount`, `DefaultPageSize`
+- Events: `OrderCreated`, `CustomerUpdated`
+
+### camelCase for private members
+
+Use camelCase with leading underscore for private fields:
+- Private fields: `_orderRepository`, `_logger`, `_httpClient`
+- Method parameters: `customerId`, `orderDate`, `isActive`
+- Local variables: `totalAmount`, `customerName`, `result`
+
+### Complete naming examples
+
+```csharp
+public class OrderService : IOrderService
+{
+    private readonly IOrderRepository _orderRepository;
+    private readonly ILogger<OrderService> _logger;
+    private const int MaxRetryCount = 3;
+    
+    public OrderService(IOrderRepository orderRepository, ILogger<OrderService> logger)
+    {
+        _orderRepository = orderRepository;
+        _logger = logger;
+    }
+    
+    public async Task<Order?> GetOrderByIdAsync(string orderId, CancellationToken cancellationToken)
+    {
+        var order = await _orderRepository.FindByIdAsync(orderId, cancellationToken);
+        return order;
+    }
+    
+    public string CustomerName { get; set; }
+    public bool IsActive { get; set; }
+}
+
+public enum OrderStatus
+{
+    Pending,
+    Confirmed,
+    Shipped,
+    Delivered,
+    Cancelled
+}
+```
+
 ## Global usings
 
 Use a `Globals.cs` file with global usings when many files share the same using statements.
