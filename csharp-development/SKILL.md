@@ -146,6 +146,259 @@ When NOT to use global usings:
 - Third-party library namespaces that may change.
 - Namespaces that might create ambiguity or naming conflicts.
 
+### Global using static for tests
+
+In test projects, use `global using static System.Net.HttpStatusCode` to make HTTP status code assertions more readable.
+
+Add to test project `Globals.cs`:
+
+```csharp
+global using static System.Net.HttpStatusCode;
+```
+
+This eliminates the need to qualify status codes with `HttpStatusCode.` in test assertions.
+
+Before:
+
+```csharp
+response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+```
+
+After:
+
+```csharp
+response.StatusCode.ShouldBe(BadRequest);
+response.StatusCode.ShouldBe(NotFound);
+```
+
+Benefits:
+- Reduces visual noise in test assertions.
+- Makes test expectations more readable and scannable.
+- Follows the principle of making tests read like specifications.
+
+## Code organization
+
+### No regions
+
+Do not use `#region` directives to organize code.
+
+Rules:
+- Never use `#region` / `#endregion`.
+- If code needs organization, refactor it into smaller classes or methods.
+- Use proper class design and separation of concerns instead.
+
+Why regions are problematic:
+- They hide code complexity instead of addressing it.
+- They encourage large, unfocused classes.
+- They make code harder to navigate and understand.
+- Modern IDEs provide better ways to collapse and navigate code.
+
+Bad example:
+
+```csharp
+public class OrderService
+{
+    #region Fields
+    private readonly IOrderRepository _orderRepository;
+    private readonly ILogger _logger;
+    #endregion
+    
+    #region Constructor
+    public OrderService(IOrderRepository orderRepository, ILogger logger)
+    {
+        _orderRepository = orderRepository;
+        _logger = logger;
+    }
+    #endregion
+    
+    #region Public Methods
+    public void CreateOrder() { }
+    public void UpdateOrder() { }
+    #endregion
+    
+    #region Private Methods
+    private void ValidateOrder() { }
+    private void SaveOrder() { }
+    #endregion
+}
+```
+
+Good example (no regions needed):
+
+```csharp
+public class OrderService
+{
+    private readonly IOrderRepository _orderRepository;
+    private readonly ILogger _logger;
+    
+    public OrderService(IOrderRepository orderRepository, ILogger logger)
+    {
+        _orderRepository = orderRepository;
+        _logger = logger;
+    }
+    
+    public void CreateOrder() { }
+    public void UpdateOrder() { }
+    
+    private void ValidateOrder() { }
+    private void SaveOrder() { }
+}
+```
+
+If a class needs regions to be "organized," it's a sign the class is doing too much and should be split into smaller, focused classes.
+
+### Using directives
+
+Using directives must be in a single block, sorted alphabetically.
+
+Rules:
+- Keep all `using` statements together in one block.
+- Sort alphabetically (System namespaces first, then third-party, then project namespaces).
+- Do not group or separate usings with blank lines.
+- Remove unused usings.
+
+Bad example (separated groups, not sorted):
+
+```csharp
+using System.Linq;
+using System;
+
+using Microsoft.AspNetCore.Mvc;
+
+using MyProject.Services;
+using MyProject.Models;
+```
+
+Good example (single block, alphabetically sorted):
+
+```csharp
+using System;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using MyProject.Models;
+using MyProject.Services;
+```
+
+Note: If using `Globals.cs` with global usings, only include file-specific usings in individual files.
+
+### Fluent API formatting
+
+When an interface supports fluent method chaining, use it with proper formatting.
+
+Rules:
+- Chain multiple method calls when the API supports it.
+- Place each method call on a new line.
+- Indent chained methods to show continuation.
+- The object/variable starts the chain on its own line.
+- End with semicolon on the last method call.
+
+Bad example (separate statements):
+
+```csharp
+builder.UseSetting("VAULT_URL", "");
+builder.UseEnvironment("Development");
+builder.ConfigureLogging();
+```
+
+Good example (fluent chain):
+
+```csharp
+builder
+    .UseSetting("VAULT_URL", "")
+    .UseEnvironment("Development")
+    .ConfigureLogging();
+```
+
+More examples:
+
+```csharp
+// Service registration
+services
+    .AddScoped<IOrderService, OrderService>()
+    .AddScoped<ICustomerService, CustomerService>()
+    .AddTransient<IEmailSender, EmailSender>();
+
+// LINQ queries
+var results = customers
+    .Where(c => c.IsActive)
+    .OrderBy(c => c.Name)
+    .Select(c => c.ToDto())
+    .ToList();
+
+// String builder
+var message = new StringBuilder()
+    .AppendLine("Order Details:")
+    .AppendLine($"Order ID: {orderId}")
+    .AppendLine($"Total: {total}")
+    .ToString();
+```
+
+Benefits:
+- Improves readability and scanning.
+- Shows clear sequence of operations.
+- Easier to add or remove steps.
+- Reduces horizontal scrolling.
+
+### Namespace and folder structure alignment
+
+Namespaces must follow the folder structure of the project.
+
+Rules:
+- The namespace must mirror the directory path.
+- Use the project root as the namespace root.
+- Keep namespace and folder structure in sync.
+- Exceptions are rare and must be justified.
+
+Folder structure:
+
+```text
+MyProject/
+  Features/
+    Orders/
+      OrderService.cs
+      OrderRepository.cs
+    Customers/
+      CustomerService.cs
+```
+
+Corresponding namespaces:
+
+```csharp
+// File: Features/Orders/OrderService.cs
+namespace MyProject.Features.Orders;
+
+public class OrderService { }
+```
+
+```csharp
+// File: Features/Customers/CustomerService.cs
+namespace MyProject.Features.Customers;
+
+public class CustomerService { }
+```
+
+Allowed exceptions:
+- Extension methods that logically belong to a common namespace for discoverability.
+- Shared types that are consumed across many features and benefit from a shorter namespace.
+
+Example exception (extension methods):
+
+```csharp
+// File: Features/Orders/Extensions/StringExtensions.cs
+namespace MyProject.Extensions; // Exception: common namespace for extensions
+
+public static class StringExtensions
+{
+    public static string ToOrderNumber(this string value) => $"ORD-{value}";
+}
+```
+
+When making exceptions:
+- Document the reason in a comment at the namespace declaration.
+- Ensure the exception provides clear value (discoverability, reduced coupling).
+- Keep exceptions minimal and consistent.
+
 ## Default values over null
 
 Prefer default values over nullable parameters when a sensible default exists.
