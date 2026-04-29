@@ -22,6 +22,17 @@ Use this skill whenever you create, modify, or review unit tests in this reposit
 - Use `async Task` for async behavior when needed.
 - Use `Shouldly` for assertions.
 
+## Test categorization
+Always add a `Category` trait to test classes or methods to indicate the test type:
+- Use `[Trait("Category", "Unit")]` for unit tests.
+- Use `[Trait("Category", "Integration")]` for integration tests.
+
+If multiple versions of a tested interface exist, add a `Version` trait:
+- Example: `[Trait("Version", "v1")]`
+- Example: `[Trait("Version", "v2")]`
+
+These traits enable selective test execution and filtering.
+
 ## Test naming convention
 Pattern:
 
@@ -73,6 +84,7 @@ Assert:
 
 ```csharp
 [Fact]
+[Trait("Category", "Integration")]
 public async Task Has_been_posted_returns_false_when_not_posted()
 {
     //// Arrange
@@ -84,6 +96,25 @@ public async Task Has_been_posted_returns_false_when_not_posted()
 
     //// Assert
     result.ShouldBeFalse();
+}
+```
+
+Example with version trait:
+
+```csharp
+[Fact]
+[Trait("Category", "Unit")]
+[Trait("Version", "v1")]
+public void Calculate_returns_correct_sum_for_v1_interface()
+{
+    //// Arrange
+    var calculator = new CalculatorV1();
+
+    //// Act
+    var result = calculator.Calculate(2, 3);
+
+    //// Assert
+    result.ShouldBe(5);
 }
 ```
 
