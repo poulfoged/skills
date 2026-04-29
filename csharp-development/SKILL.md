@@ -247,6 +247,80 @@ public Result<Order> GetOrder(string orderId)
 }
 ```
 
+### Result type for flow control
+
+If needed, you may add a small `Result<T, TError>` type to handle flow control rather than throwing exceptions.
+
+Implementation:
+
+```csharp
+public readonly struct Result<T, TError> where TError : notnull
+{
+    private readonly T _value;
+    private readonly TError _error;
+
+    public bool IsSuccess { get; }
+    public bool IsFailure => !IsSuccess;
+
+    private Result(bool isSuccess, T value, TError error)
+    {
+        IsSuccess = isSuccess;
+        _value = value;
+        _error = error;
+    }
+
+    public static Result<T, TError> Success(T value) 
+        => new(true, value, default!);
+    
+    public static Result<T, TError> Failure(TError error) 
+        => new(false, default!, error);
+
+    public T Value => _value;
+    public TError Error => _error;
+
+    public T ValueOr(T fallback) => IsSuccess ? _value : fallback;
+
+    public static implicit operator Result<T, TError>(T value) => Success(value);
+}
+```
+
+Usage examples:
+
+```csharp
+// With string errors
+public Result<Order, string> GetOrder(string id)
+{
+    var order = _repository.FindById(id);
+    return order != null 
+        ? Result<Order, string>.Success(order)
+        : Result<Order, string>.Failure("Order not found");
+}
+
+// With enum error codes
+public enum ValidationError { Required, TooShort, InvalidFormat }
+
+public Result<User, ValidationError> ValidateUser(string name)
+{
+    if (string.IsNullOrEmpty(name))
+        return Result<User, ValidationError>.Failure(ValidationError.Required);
+    
+    return Result<User, ValidationError>.Success(new User(name));
+}
+
+// With exceptions (when catching and converting)
+public Result<string, Exception> ReadFile(string path)
+{
+    try
+    {
+        return Result<string, Exception>.Success(File.ReadAllText(path));
+    }
+    catch (Exception ex)
+    {
+        return Result<string, Exception>.Failure(ex);
+    }
+}
+```
+
 ## Controller conventions
 
 All controllers and endpoints must follow these conventions:
