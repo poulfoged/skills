@@ -453,6 +453,90 @@ public void UpdateUser(string userId, string? email = null)
 }
 ```
 
+## Early returns
+
+Always prefer early returns to reduce nesting and improve readability. Exit methods as soon as conditions are met.
+
+Rules:
+- Return early when failure conditions are met.
+- Avoid wrapping the entire method body in an if statement when the method ends with it.
+- Invert conditions to enable early returns when the negative case should exit.
+- Reduce indentation by handling edge cases first.
+
+Bad example (nested if at the end):
+
+```csharp
+public async Task ValidateResponse(HttpResponseMessage response, HttpStatusCode expectedStatus, string clientId)
+{
+    response.StatusCode.ShouldBe(expectedStatus);
+    
+    if (expectedStatus == OK)
+    {
+        var result = await response.Content.ReadFromJsonAsync<ItemResponse<WorkloadClientDto>>(JsonOptions);
+        result.ShouldNotBeNull();
+        result.Item.ShouldNotBeNull();
+        result.Item.ClientId.ShouldBe(clientId);
+    }
+}
+```
+
+Good example (early return):
+
+```csharp
+public async Task ValidateResponse(HttpResponseMessage response, HttpStatusCode expectedStatus, string clientId)
+{
+    response.StatusCode.ShouldBe(expectedStatus);
+    
+    if (expectedStatus != OK)
+    {
+        return;
+    }
+    
+    var result = await response.Content.ReadFromJsonAsync<ItemResponse<WorkloadClientDto>>(JsonOptions);
+    result?.Item?.ClientId.ShouldBe(clientId);
+}
+```
+
+Benefits:
+- Reduces nesting levels and improves readability.
+- Makes the happy path clear by handling edge cases first.
+- Easier to add additional logic without increasing complexity.
+- Aligns with guard clause patterns.
+
+More examples:
+
+```csharp
+// Bad: nested validation
+public void ProcessOrder(Order order)
+{
+    if (order != null)
+    {
+        if (order.IsValid)
+        {
+            if (order.Total > 0)
+            {
+                // Process order...
+            }
+        }
+    }
+}
+
+// Good: early returns
+public void ProcessOrder(Order order)
+{
+    if (order == null)
+        return;
+    
+    if (!order.IsValid)
+        return;
+    
+    if (order.Total <= 0)
+        return;
+    
+    // Process order...
+}
+```
+
 ## Exception handling and control flow
 
 Avoid using exceptions for control flow. Prefer explicit return types that communicate success or failure.
@@ -665,6 +749,44 @@ public class OrdersController : ControllerBase
     }
 }
 ```
+
+## Test assertions
+
+Keep test assertions clean and minimal by asserting only what's necessary.
+
+Rules:
+- Do not chain multiple `ShouldNotBeNull()` assertions when a single assertion on a nested property is sufficient.
+- Use the null-conditional operator (`?`) to access nested properties when needed.
+- Assert the final value or condition directly rather than asserting each step of navigation.
+
+Bad example (redundant null checks):
+
+```csharp
+var result = await _service.GetOrderAsync(orderId);
+
+result.ShouldNotBeNull();
+result.Item.ShouldNotBeNull();
+result.Item.Name.ShouldBe(uniqueName);
+```
+
+Good example (direct assertion):
+
+```csharp
+var result = await _service.GetOrderAsync(orderId);
+
+result?.Item?.Name.ShouldBe(uniqueName);
+```
+
+Benefits:
+- Reduces test noise and improves readability.
+- Focuses on the actual assertion rather than intermediate navigation.
+- Makes test intent clearer by showing what truly matters.
+
+When redundant null checks are acceptable:
+- When the null state itself is part of the test scenario and you need to verify each step.
+- When a more descriptive test failure message is needed to diagnose issues.
+
+In most cases, use the null-conditional operator and assert the final value directly.
 
 ## Enforcement
 
