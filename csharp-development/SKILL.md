@@ -72,6 +72,35 @@ Rules:
 - Constants: `MaxRetryCount`, `DefaultPageSize`
 - Events: `OrderCreated`, `CustomerUpdated`
 
+### No abbreviated names
+
+Always use full, descriptive names for variables, parameters, and fields. Never shorten names for brevity.
+
+Rules:
+- Write out the full word or phrase that describes the concept.
+- Do not use single-letter names, acronyms, or truncations except for universally understood loop counters (`i`, `j`) in trivial loops.
+- This applies to parameters, locals, fields, and type parameters.
+
+Bad examples:
+
+```csharp
+CancellationToken ct
+HttpClient hc
+IOrderRepository repo
+ILogger l
+string usr
+```
+
+Good examples:
+
+```csharp
+CancellationToken cancellationToken
+HttpClient httpClient
+IOrderRepository orderRepository
+ILogger logger
+string username
+```
+
 ### camelCase for private members
 
 Use camelCase with leading underscore for private fields:
@@ -399,6 +428,55 @@ When making exceptions:
 - Ensure the exception provides clear value (discoverability, reduced coupling).
 - Keep exceptions minimal and consistent.
 
+## Pattern matching over null checks
+
+Use `is not null` and `is null` instead of `!= null` and `== null`.
+
+Rules:
+- Prefer `is null` / `is not null` for all null checks.
+- Use pattern matching (`is`, `is not`, `switch` expressions) over equality operators wherever it improves clarity.
+- Extend this to type checks: prefer `if (x is OrderDto dto)` over `if (x is OrderDto) { var dto = (OrderDto)x; }`.
+
+Bad example:
+
+```csharp
+if (descriptorToRemove != null)
+{
+    Remove(descriptorToRemove);
+}
+```
+
+Good example:
+
+```csharp
+if (descriptorToRemove is not null)
+{
+    Remove(descriptorToRemove);
+}
+```
+
+More examples:
+
+```csharp
+// Null check
+if (order is null) return;
+
+// Type pattern
+if (result is ValidationError error)
+{
+    return BadRequest(error.Message);
+}
+
+// Switch expression
+var label = status switch
+{
+    OrderStatus.Pending   => "Awaiting confirmation",
+    OrderStatus.Shipped   => "On the way",
+    OrderStatus.Delivered => "Delivered",
+    _                     => "Unknown"
+};
+```
+
 ## Default values over null
 
 Prefer default values over nullable parameters when a sensible default exists.
@@ -534,6 +612,38 @@ public void ProcessOrder(Order order)
         return;
     
     // Process order...
+}
+```
+
+## CancellationToken usage
+
+All async methods must accept and propagate a `CancellationToken`.
+
+Rules:
+- Add `CancellationToken cancellationToken` as the last parameter to every `async` method.
+- Pass `cancellationToken` through to every downstream async call — never drop it.
+- Do not default to `CancellationToken.None` inside a method body when a token was provided by the caller.
+- Name the parameter `cancellationToken` (camelCase, no abbreviation).
+
+Exceptions:
+- Event handlers (signature is fixed by the event delegate).
+- Top-level entry points where no caller token exists — use `CancellationToken.None` or a `CancellationTokenSource` tied to application lifetime.
+
+Bad example (token not accepted or forwarded):
+
+```csharp
+public async Task<Order?> GetOrderAsync(string orderId)
+{
+    return await _repository.FindByIdAsync(orderId); // token dropped
+}
+```
+
+Good example:
+
+```csharp
+public async Task<Order?> GetOrderAsync(string orderId, CancellationToken cancellationToken)
+{
+    return await _repository.FindByIdAsync(orderId, cancellationToken);
 }
 ```
 
