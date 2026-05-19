@@ -22,6 +22,71 @@ Use this skill whenever you create, modify, or review unit tests in this reposit
 - Use `async Task` for async behavior when needed.
 - Use `Shouldly` for assertions.
 
+## Prefer [Fact] over [Theory] for small input sets
+
+Use `[Fact]` instead of `[Theory]` when there are only one or two input sets. Split into separate named tests.
+
+Rules:
+- If a `[Theory]` has one or two `[InlineData]` cases, replace it with individual `[Fact]` tests.
+- Give each fact a name that describes the specific condition — this replaces the data row as documentation.
+- Only use `[Theory]` when there are three or more meaningfully distinct input sets that test the same behavior.
+
+Bad example (Theory with two cases):
+
+```csharp
+[Theory]
+[InlineData("")]
+[InlineData(null)]
+public void Validate_fails_when_name_is_invalid(string name)
+{
+    //// Arrange
+    var validator = new NameValidator();
+
+    //// Act
+    var result = validator.Validate(name);
+
+    //// Assert
+    result.IsValid.ShouldBeFalse();
+}
+```
+
+Good example (split into Facts):
+
+```csharp
+[Fact]
+[Trait("Category", "Unit")]
+public void Validate_fails_when_name_is_empty_string()
+{
+    //// Arrange
+    var validator = new NameValidator();
+
+    //// Act
+    var result = validator.Validate("");
+
+    //// Assert
+    result.IsValid.ShouldBeFalse();
+}
+
+[Fact]
+[Trait("Category", "Unit")]
+public void Validate_fails_when_name_is_null()
+{
+    //// Arrange
+    var validator = new NameValidator();
+
+    //// Act
+    var result = validator.Validate(null);
+
+    //// Assert
+    result.IsValid.ShouldBeFalse();
+}
+```
+
+Benefits:
+- Each failure names exactly which condition broke.
+- Tests read as individual specifications.
+- No need to decode a data table to understand intent.
+
 ## Test categorization
 Always add a `Category` trait to test classes or methods to indicate the test type:
 - Use `[Trait("Category", "Unit")]` for unit tests.
