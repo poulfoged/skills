@@ -231,6 +231,28 @@ Do not:
 - Use relative or absolute file paths.
 - Duplicate resource-loading helpers unless needed.
 
+## Avoid nullable chain access in assertions
+Do not use the null-conditional operator (`?.`) inside assertions. It silently masks null values, causing tests to pass without exercising the expected code path.
+
+Bad (dangerous — null falls through to `ShouldBe`):
+
+```csharp
+result?.Item?.ClientId.ShouldBe(clientId);
+```
+
+Good (fails fast with a null reference):
+
+```csharp
+result.Item.ClientId.ShouldBe(clientId);
+```
+
+Better (explicit null guard with a clear failure message):
+
+```csharp
+result.ShouldNotBeNull();
+result.Item.ClientId.ShouldBe(clientId);
+```
+
 ## General principles
 - Tests read like executable specifications.
 - One behavior per test.

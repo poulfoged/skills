@@ -18,6 +18,80 @@ metadata:
 
 Use this skill whenever you create, modify, or review C# code in this repository.
 
+## .NET 10 project conventions
+
+For all .NET 10 projects in this repository, apply the following setup.
+
+### global.json
+
+Create `global.json` at the repository root:
+
+```json
+{
+  "sdk": {
+    "rollForward": "latestMinor",
+    "version": "8.0.100"
+  }
+}
+```
+
+### Central package management
+
+Create `src/Directory.Packages.props` with central package versioning:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- All package versions declared here only -->
+  </ItemGroup>
+</Project>
+```
+
+Rules:
+- All package `Version` attributes are declared exclusively in `Directory.Packages.props`.
+- Remove all `Version="..."` attributes from `PackageReference` entries in all `.csproj` files.
+- Add or update versions only in `Directory.Packages.props`.
+
+### Directory.Build.props
+
+Create `src/Directory.Build.props` with common project properties:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NuGetAudit>true</NuGetAudit>
+  </PropertyGroup>
+</Project>
+```
+
+### OpenAPI with Scalar + Swagger UI
+
+Use `Microsoft.AspNetCore.OpenApi` for OpenAPI spec generation.
+
+Serve both Scalar and Swagger UI simultaneously as frontends — non-production only:
+
+```csharp
+if (!app.Environment.IsProduction())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+    app.MapSwaggerUi();
+}
+```
+
+### Testing
+
+Use `xunit.v3.mtp-v2` as the test framework.
+
 ## Core principles
 
 ### Zero warnings policy
