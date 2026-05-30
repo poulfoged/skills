@@ -666,6 +666,101 @@ public class OrdersController : ControllerBase
 }
 ```
 
+## Model mapping
+
+Mapping logic between domain models and request/response models belongs in those models themselves, not in services or controllers.
+
+Rules:
+- Never place mapping logic in services, controllers, or external mapper classes.
+- The method must be named `Map` and be `static`.
+- **Response models** define `static TResponse Map(TDomain model)` — they receive a domain model and return themselves.
+- **Request models** define `static TDomain Map(this TRequest request)` — they map themselves to a domain model.
+
+### Response mapping
+
+```csharp
+public class UserAccountResponse
+{
+    public string Id { get; init; }
+    public string DisplayName { get; init; }
+    public string Email { get; init; }
+
+    public static UserAccountResponse Map(UserAccount account) => new()
+    {
+        Id = account.Id,
+        DisplayName = account.FullName,
+        Email = account.Email
+    };
+}
+
+// Controller:
+return Ok(UserAccountResponse.Map(account));
+```
+
+When mapping collections, use LINQ:
+
+```csharp
+var responses = accounts
+    .Select(UserAccountResponse.Map)
+    .ToList();
+```
+
+### Request mapping
+
+```csharp
+public class UserAccountRequest
+{
+    public string FullName { get; init; }
+    public string Email { get; init; }
+
+    public static UserAccount Map(UserAccountRequest request) => new()
+    {
+        FullName = request.FullName,
+        Email = request.Email
+    };
+}
+
+// Controller:
+var account = UserAccountRequest.Map(request);
+```
+
+## Use real types over primitives
+
+Prefer purpose-built types over raw primitives when a richer type exists and accurately represents the value's intent.
+
+Rules:
+- Use `System.Uri` instead of `string` for URLs and URIs.
+- Use `Guid` instead of `string` for identifiers that are GUIDs.
+- Use strongly-typed ID types (e.g., `TypeId`, `CustomerId`, `OrderId`) instead of `string` or `Guid` when the domain has specific ID types.
+- Use `DateTimeOffset` instead of `string` for timestamps.
+- Use `decimal` instead of `double` or `string` for monetary values.
+- Use enums instead of `string` or `int` for fixed sets of values.
+
+Bad examples:
+
+```csharp
+public string WebhookUrl { get; set; }          // should be Uri
+public string CustomerId { get; set; }           // should be Guid or CustomerId
+public string OrderId { get; set; }              // should be typed ID
+public string CreatedAt { get; set; }            // should be DateTimeOffset
+```
+
+Good examples:
+
+```csharp
+public Uri WebhookUrl { get; set; }
+public Guid CustomerId { get; set; }
+public OrderId OrderId { get; set; }             // strongly-typed ID
+public DateTimeOffset CreatedAt { get; set; }
+```
+
+When to keep `string`:
+- The value truly has no more specific type (e.g., a free-text name or description).
+- Interoperability constraints require it (e.g., serialization boundaries where the richer type cannot be used).
+- The value may contain formats not representable by the target type.
+
+At serialization boundaries (e.g., request/response models), accept primitives if needed and map to real types in the domain model. Never propagate raw primitives deeper than the boundary layer.
+
 ## Enforcement
 
 - Use PR checklists that reference this skill.
