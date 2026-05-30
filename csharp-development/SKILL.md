@@ -18,6 +18,80 @@ metadata:
 
 Use this skill whenever you create, modify, or review C# code in this repository.
 
+## .NET 10 project conventions
+
+For all .NET 10 projects in this repository, apply the following setup.
+
+### global.json
+
+Create `global.json` at the repository root:
+
+```json
+{
+  "sdk": {
+    "rollForward": "latestMinor",
+    "version": "8.0.100"
+  }
+}
+```
+
+### Central package management
+
+Create `src/Directory.Packages.props` with central package versioning:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- All package versions declared here only -->
+  </ItemGroup>
+</Project>
+```
+
+Rules:
+- All package `Version` attributes are declared exclusively in `Directory.Packages.props`.
+- Remove all `Version="..."` attributes from `PackageReference` entries in all `.csproj` files.
+- Add or update versions only in `Directory.Packages.props`.
+
+### Directory.Build.props
+
+Create `src/Directory.Build.props` with common project properties:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NuGetAudit>true</NuGetAudit>
+  </PropertyGroup>
+</Project>
+```
+
+### OpenAPI with Scalar + Swagger UI
+
+Use `Microsoft.AspNetCore.OpenApi` for OpenAPI spec generation.
+
+Serve both Scalar and Swagger UI simultaneously as frontends — non-production only:
+
+```csharp
+if (!app.Environment.IsProduction())
+{
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+    app.MapSwaggerUi();
+}
+```
+
+### Testing
+
+Use `xunit.v3.mtp-v2` as the test framework.
+
 ## Core principles
 
 ### Zero warnings policy
@@ -71,6 +145,35 @@ Rules:
 - Enum values: `OrderStatus.Pending`, `UserRole.Administrator`
 - Constants: `MaxRetryCount`, `DefaultPageSize`
 - Events: `OrderCreated`, `CustomerUpdated`
+
+### No abbreviated names
+
+Always use full, descriptive names for variables, parameters, and fields. Never shorten names for brevity.
+
+Rules:
+- Write out the full word or phrase that describes the concept.
+- Do not use single-letter names, acronyms, or truncations except for universally understood loop counters (`i`, `j`) in trivial loops.
+- This applies to parameters, locals, fields, and type parameters.
+
+Bad examples:
+
+```csharp
+CancellationToken ct
+HttpClient hc
+IOrderRepository repo
+ILogger l
+string usr
+```
+
+Good examples:
+
+```csharp
+CancellationToken cancellationToken
+HttpClient httpClient
+IOrderRepository orderRepository
+ILogger logger
+string username
+```
 
 ### camelCase for private members
 
@@ -399,6 +502,55 @@ When making exceptions:
 - Ensure the exception provides clear value (discoverability, reduced coupling).
 - Keep exceptions minimal and consistent.
 
+## Pattern matching over null checks
+
+Use `is not null` and `is null` instead of `!= null` and `== null`.
+
+Rules:
+- Prefer `is null` / `is not null` for all null checks.
+- Use pattern matching (`is`, `is not`, `switch` expressions) over equality operators wherever it improves clarity.
+- Extend this to type checks: prefer `if (x is OrderDto dto)` over `if (x is OrderDto) { var dto = (OrderDto)x; }`.
+
+Bad example:
+
+```csharp
+if (descriptorToRemove != null)
+{
+    Remove(descriptorToRemove);
+}
+```
+
+Good example:
+
+```csharp
+if (descriptorToRemove is not null)
+{
+    Remove(descriptorToRemove);
+}
+```
+
+More examples:
+
+```csharp
+// Null check
+if (order is null) return;
+
+// Type pattern
+if (result is ValidationError error)
+{
+    return BadRequest(error.Message);
+}
+
+// Switch expression
+var label = status switch
+{
+    OrderStatus.Pending   => "Awaiting confirmation",
+    OrderStatus.Shipped   => "On the way",
+    OrderStatus.Delivered => "Delivered",
+    _                     => "Unknown"
+};
+```
+
 ## Default values over null
 
 Prefer default values over nullable parameters when a sensible default exists.
@@ -450,6 +602,122 @@ public void UpdateUser(string userId, string? email = null)
     }
     
     Save(user);
+}
+```
+
+## Early returns
+
+Always prefer early returns to reduce nesting and improve readability. Exit methods as soon as conditions are met.
+
+Rules:
+- Return early when failure conditions are met.
+- Avoid wrapping the entire method body in an if statement when the method ends with it.
+- Invert conditions to enable early returns when the negative case should exit.
+- Reduce indentation by handling edge cases first.
+
+Bad example (nested if at the end):
+
+```csharp
+public async Task ValidateResponse(HttpResponseMessage response, HttpStatusCode expectedStatus, string clientId)
+{
+    response.StatusCode.ShouldBe(expectedStatus);
+    
+    if (expectedStatus == OK)
+    {
+        var result = await response.Content.ReadFromJsonAsync<ItemResponse<WorkloadClientDto>>(JsonOptions);
+        result.ShouldNotBeNull();
+        result.Item.ShouldNotBeNull();
+        result.Item.ClientId.ShouldBe(clientId);
+    }
+}
+```
+
+Good example (early return):
+
+```csharp
+public async Task ValidateResponse(HttpResponseMessage response, HttpStatusCode expectedStatus, string clientId)
+{
+    response.StatusCode.ShouldBe(expectedStatus);
+    
+    if (expectedStatus != OK)
+    {
+        return;
+    }
+    
+    var result = await response.Content.ReadFromJsonAsync<ItemResponse<WorkloadClientDto>>(JsonOptions);
+    result?.Item?.ClientId.ShouldBe(clientId);
+}
+```
+
+Benefits:
+- Reduces nesting levels and improves readability.
+- Makes the happy path clear by handling edge cases first.
+- Easier to add additional logic without increasing complexity.
+- Aligns with guard clause patterns.
+
+More examples:
+
+```csharp
+// Bad: nested validation
+public void ProcessOrder(Order order)
+{
+    if (order != null)
+    {
+        if (order.IsValid)
+        {
+            if (order.Total > 0)
+            {
+                // Process order...
+            }
+        }
+    }
+}
+
+// Good: early returns
+public void ProcessOrder(Order order)
+{
+    if (order == null)
+        return;
+    
+    if (!order.IsValid)
+        return;
+    
+    if (order.Total <= 0)
+        return;
+    
+    // Process order...
+}
+```
+
+## CancellationToken usage
+
+All async methods must accept and propagate a `CancellationToken`.
+
+Rules:
+- Add `CancellationToken cancellationToken` as the last parameter to every `async` method.
+- Pass `cancellationToken` through to every downstream async call — never drop it.
+- Do not default to `CancellationToken.None` inside a method body when a token was provided by the caller.
+- Name the parameter `cancellationToken` (camelCase, no abbreviation).
+
+Exceptions:
+- Event handlers (signature is fixed by the event delegate).
+- Top-level entry points where no caller token exists — use `CancellationToken.None` or a `CancellationTokenSource` tied to application lifetime.
+
+Bad example (token not accepted or forwarded):
+
+```csharp
+public async Task<Order?> GetOrderAsync(string orderId)
+{
+    return await _repository.FindByIdAsync(orderId); // token dropped
+}
+```
+
+Good example:
+
+```csharp
+public async Task<Order?> GetOrderAsync(string orderId, CancellationToken cancellationToken)
+{
+    return await _repository.FindByIdAsync(orderId, cancellationToken);
 }
 ```
 
@@ -666,6 +934,7 @@ public class OrdersController : ControllerBase
 }
 ```
 
+<<<<<<< HEAD
 ## Model mapping
 
 Mapping logic between domain models and request/response models belongs in those models themselves, not in services or controllers.
@@ -760,6 +1029,45 @@ When to keep `string`:
 - The value may contain formats not representable by the target type.
 
 At serialization boundaries (e.g., request/response models), accept primitives if needed and map to real types in the domain model. Never propagate raw primitives deeper than the boundary layer.
+=======
+## Test assertions
+
+Keep test assertions clean and minimal by asserting only what's necessary.
+
+Rules:
+- Do not chain multiple `ShouldNotBeNull()` assertions when a single assertion on a nested property is sufficient.
+- Use the null-conditional operator (`?`) to access nested properties when needed.
+- Assert the final value or condition directly rather than asserting each step of navigation.
+
+Bad example (redundant null checks):
+
+```csharp
+var result = await _service.GetOrderAsync(orderId);
+
+result.ShouldNotBeNull();
+result.Item.ShouldNotBeNull();
+result.Item.Name.ShouldBe(uniqueName);
+```
+
+Good example (direct assertion):
+
+```csharp
+var result = await _service.GetOrderAsync(orderId);
+
+result?.Item?.Name.ShouldBe(uniqueName);
+```
+
+Benefits:
+- Reduces test noise and improves readability.
+- Focuses on the actual assertion rather than intermediate navigation.
+- Makes test intent clearer by showing what truly matters.
+
+When redundant null checks are acceptable:
+- When the null state itself is part of the test scenario and you need to verify each step.
+- When a more descriptive test failure message is needed to diagnose issues.
+
+In most cases, use the null-conditional operator and assert the final value directly.
+>>>>>>> 4b66c63f7f1d101b0767960c34f2776c60cb1c41
 
 ## Enforcement
 
