@@ -502,6 +502,59 @@ When making exceptions:
 - Ensure the exception provides clear value (discoverability, reduced coupling).
 - Keep exceptions minimal and consistent.
 
+## Regular expressions — always include a timeout
+
+All `Regex` usage must specify an explicit timeout to prevent catastrophic backtracking and ReDoS attacks.
+
+Rules:
+- Always pass a `TimeSpan` timeout to `Regex` constructor or static methods.
+- When in doubt, use `TimeSpan.FromSeconds(1)`.
+- Use `RegexOptions.NonBacktracking` when available (.NET 7+) as a safer alternative.
+- Store frequently used patterns as compiled `static` `Regex` instances with timeout.
+
+Bad (no timeout):
+
+```csharp
+if (Regex.IsMatch(input, @"^[a-z]+$"))
+{
+    // ...
+}
+```
+
+Good (explicit timeout):
+
+```csharp
+if (Regex.IsMatch(input, @"^[a-z]+$", RegexOptions.None, TimeSpan.FromSeconds(1)))
+{
+    // ...
+}
+```
+
+Better (compiled static instance with timeout):
+
+```csharp
+private static readonly Regex ValidNamePattern = new(
+    @"^[a-z]+$",
+    RegexOptions.Compiled | RegexOptions.CultureInvariant,
+    TimeSpan.FromSeconds(1));
+
+public bool IsValidName(string input) => ValidNamePattern.IsMatch(input);
+```
+
+Best (non-backtracking engine):
+
+```csharp
+private static readonly Regex ValidNamePattern = new(
+    @"^[a-z]+$",
+    RegexOptions.Compiled | RegexOptions.NonBacktracking | RegexOptions.CultureInvariant,
+    TimeSpan.FromSeconds(1));
+```
+
+Do not:
+- Use `Regex.Initialize` or `Regex.CompileToAssembly` (deprecated).
+- Omit the timeout argument.
+- Use `Timeout.Infinite` unless the pattern is proven safe by construction.
+
 ## Pattern matching over null checks
 
 Use `is not null` and `is null` instead of `!= null` and `== null`.
@@ -844,95 +897,7 @@ public Result<string, Exception> ReadFile(string path)
 
 ## Controller conventions
 
-All controllers and endpoints must follow these conventions:
-
-Required attributes:
-- Add a description to controllers using `[ApiController]` and XML comments or attributes.
-- Decorate controllers or individual endpoints with Swagger response attributes.
-- Always include `ProblemDetails` response for error cases.
-
-Required Swagger response attribute:
-
-```csharp
-[SwaggerResponse(StatusCodes.Status400BadRequest, type: typeof(ProblemDetails), contentTypes: "application/problem+json")]
-```
-
-This attribute can be applied at:
-- Controller class level (applies to all endpoints).
-- Individual endpoint method level (specific to that endpoint).
-
-Example controller with class-level attributes:
-
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-[SwaggerResponse(StatusCodes.Status400BadRequest, type: typeof(ProblemDetails), contentTypes: "application/problem+json")]
-[SwaggerResponse(StatusCodes.Status500InternalServerError, type: typeof(ProblemDetails), contentTypes: "application/problem+json")]
-public class OrdersController : ControllerBase
-{
-    private readonly IOrderService _orderService;
-    
-    public OrdersController(IOrderService orderService)
-    {
-        _orderService = orderService;
-    }
-
-    /// <summary>
-    /// Retrieves an order by ID.
-    /// </summary>
-    [HttpGet("{id}")]
-    [SwaggerResponse(StatusCodes.Status200OK, type: typeof(OrderDto))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, type: typeof(ProblemDetails), contentTypes: "application/problem+json")]
-    public async Task<ActionResult<OrderDto>> GetOrder(string id)
-    {
-        var order = await _orderService.GetOrderAsync(id);
-        
-        if (order == null)
-        {
-            return NotFound(new ProblemDetails
-            {
-                Status = StatusCodes.Status404NotFound,
-                Title = "Order not found",
-                Detail = $"No order found with ID: {id}"
-            });
-        }
-        
-        return Ok(order);
-    }
-}
-```
-
-Example endpoint with method-level attributes:
-
-```csharp
-[ApiController]
-[Route("api/[controller]")]
-public class OrdersController : ControllerBase
-{
-    /// <summary>
-    /// Creates a new order.
-    /// </summary>
-    [HttpPost]
-    [SwaggerResponse(StatusCodes.Status201Created, type: typeof(OrderDto))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, type: typeof(ProblemDetails), contentTypes: "application/problem+json")]
-    public async Task<ActionResult<OrderDto>> CreateOrder([FromBody] CreateOrderRequest request)
-    {
-        var result = await _orderService.CreateOrderAsync(request);
-        
-        if (!result.IsSuccess)
-        {
-            return BadRequest(new ProblemDetails
-            {
-                Status = StatusCodes.Status400BadRequest,
-                Title = "Invalid order",
-                Detail = result.ErrorMessage
-            });
-        }
-        
-        return CreatedAtAction(nameof(GetOrder), new { id = result.Value.Id }, result.Value);
-    }
-}
-```
+For response type declarations, status code documentation, `ProblemDetails` contracts, and OpenAPI metadata, see the `api-documentation` skill.
 
 ## Test assertions
 

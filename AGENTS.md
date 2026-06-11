@@ -56,6 +56,7 @@ Skills must be placed in one of these locations to be auto-discovered:
 
 | Skill | When to load |
 |---|---|
+| `api-documentation` | Documenting or reviewing API response types, status codes, or OpenAPI metadata |
 | `csharp-development` | Creating, modifying, or reviewing C# / .NET code |
 | `testing-standards-and-skills` | Writing or reviewing xUnit tests |
 | `feature-sliced-architecture` | Building or refactoring ASP.NET Core apps with feature folders |
