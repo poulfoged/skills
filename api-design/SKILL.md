@@ -255,6 +255,22 @@ Rules:
 - Each versioned controller redeclares every method explicitly with its own route attributes.
 - Do not use this pattern for additive changes to individual endpoints — only when the intent is a full client migration to the new version.
 
+## Media type constants
+
+Use `System.Net.Mime.MediaTypeNames` constants instead of raw strings for media types.
+
+```csharp
+// Wrong
+[Produces("application/json")]
+[Consumes("application/problem+json")]
+
+// Correct
+[Produces(MediaTypeNames.Application.Json)]
+[Consumes(MediaTypeNames.Application.ProblemJson)]
+```
+
+This applies everywhere a media type string appears: `[Produces]`, `[Consumes]`, `Content-Type` headers set manually, and OpenAPI metadata.
+
 ## Enforcement
 
 - Use PR checklists that reference this skill.

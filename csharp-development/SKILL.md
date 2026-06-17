@@ -897,9 +897,8 @@ public Result<string, Exception> ReadFile(string path)
 
 ## Controller conventions
 
-For response type declarations, status code documentation, `ProblemDetails` contracts, and OpenAPI metadata, see the `api-documentation` skill.
+For response type declarations, status code documentation, `ProblemDetails` contracts, and OpenAPI metadata, see the `api-design` skill.
 
-<<<<<<< HEAD
 ## Model mapping
 
 Mapping logic between domain models and request/response models belongs in those models themselves, not in services or controllers.
@@ -994,7 +993,7 @@ When to keep `string`:
 - The value may contain formats not representable by the target type.
 
 At serialization boundaries (e.g., request/response models), accept primitives if needed and map to real types in the domain model. Never propagate raw primitives deeper than the boundary layer.
-=======
+
 ## Test assertions
 
 Keep test assertions clean and minimal by asserting only what's necessary.
@@ -1032,7 +1031,37 @@ When redundant null checks are acceptable:
 - When a more descriptive test failure message is needed to diagnose issues.
 
 In most cases, use the null-conditional operator and assert the final value directly.
->>>>>>> 4b66c63f7f1d101b0767960c34f2776c60cb1c41
+
+## Accessibility — prefer the most restrictive modifier
+
+Always declare classes, types, and members with the most restrictive access modifier possible.
+
+Rules:
+- Default to `private`. Widen to `internal`, `protected`, or `public` only when genuinely required.
+- Prefer `internal` over `public` for types that do not form part of a public API surface.
+- Test projects that need access to `internal` types must use `[assembly: InternalsVisibleTo("MyProject.Tests")]` in the production project — do not widen to `public` just for tests.
+
+```csharp
+// Wrong — public when nothing outside the assembly needs it
+public class OrderValidator { }
+
+// Correct
+internal class OrderValidator { }
+```
+
+```csharp
+// Wrong — widened to public just for tests
+public string BuildQuery(Filter filter) { ... }
+
+// Correct — internal, tests access via InternalsVisibleTo
+internal string BuildQuery(Filter filter) { ... }
+```
+
+`InternalsVisibleTo` declaration (in production `.csproj` or `AssemblyInfo.cs`):
+
+```csharp
+[assembly: InternalsVisibleTo("MyProject.Tests")]
+```
 
 ## Enforcement
 
