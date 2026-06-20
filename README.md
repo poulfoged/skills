@@ -8,6 +8,21 @@ This repository contains agent skills that provide consistent, enforceable guide
 
 ## Available Skills
 
+### [api-documentation](./api-documentation/)
+Enforce OpenAPI documentation standards for ASP.NET Core APIs including status code declarations, TypedResults usage, ProblemDetails contracts, and response metadata.
+
+**Coverage:**
+- TypedResults as the primary response documentation mechanism
+- Standard status code catalogue (200, 201, 204, 400, 401, 403, 404, 408, 409, 422, 500)
+- 408 for client abort/disconnect
+- ProblemDetails for all 4xx and 5xx responses
+- `[ProducesResponseType]` for supplemental descriptions
+- Do-not-use guidance for `[SwaggerResponse]`
+
+**Use when:** Documenting or reviewing API response types, status codes, or OpenAPI metadata.
+
+---
+
 ### [csharp-development](./csharp-development/)
 Enforce C# coding standards and best practices for .NET applications.
 
@@ -16,7 +31,6 @@ Enforce C# coding standards and best practices for .NET applications.
 - Naming conventions (PascalCase/camelCase)
 - Global usings and code organization
 - Exception handling and control flow
-- Controller conventions with Swagger
 - Fluent API formatting
 - Namespace and folder structure alignment
 
