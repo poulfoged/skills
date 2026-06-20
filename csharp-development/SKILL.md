@@ -175,6 +175,42 @@ ILogger logger
 string username
 ```
 
+### Storage-agnostic naming for stores
+
+Never name a class after the storage technology it uses. Classes like `UserStore`, `OrderRepository`, or `ProductStore` should reflect the domain concept, not the underlying infrastructure.
+
+Bad examples:
+
+```csharp
+public class SqlServerUserStore : IUserStore { }
+public class ElasticsearchOrderRepository : IOrderRepository { }
+public class MongoDbProductStore : IProductStore { }
+public class RedisCacheStore : ICacheStore { }
+```
+
+Good examples:
+
+```csharp
+public class UserStore : IUserStore { }
+public class OrderRepository : IOrderRepository { }
+public class ProductStore : IProductStore { }
+public class CacheStore : ICacheStore { }
+```
+
+If you need to differentiate implementations (e.g., for testing), use the technology name in the namespace, not the class name:
+
+```csharp
+// File: Infrastructure/Stores/SqlServer/CacheStore.cs
+namespace MyProject.Infrastructure.Stores.SqlServer;
+
+public class CacheStore : ICacheStore { }
+```
+
+Rules:
+- The class name must describe only the domain concept (`UserStore`, `OrderRepository`).
+- Storage technology (`SqlServer`, `Elasticsearch`, `Redis`, `MongoDb`) goes in the namespace or project folder, never the type name.
+- Test doubles follow the same rule: `FakeUserStore`, `InMemoryOrderRepository`, `SpyCacheStore` — not `FakeSqlServerUserStore`.
+
 ### camelCase for private members
 
 Use camelCase with leading underscore for private fields:
