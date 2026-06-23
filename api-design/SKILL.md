@@ -10,13 +10,59 @@ metadata:
 
 ## What I do
 
+- Enforce true REST resource modelling and URL design.
 - Enforce how API response types and status codes are declared and documented.
 - Review controllers and endpoints for correct OpenAPI metadata.
 - Provide compliant examples and direct fixes when documentation is missing or incorrect.
 
 ## When to use me
 
-Use this skill whenever you create, modify, or review ASP.NET Core API endpoints — controllers or minimal APIs — where response types, status codes, or OpenAPI metadata are involved.
+Use this skill whenever you create, modify, or review ASP.NET Core API endpoints — controllers or minimal APIs — where resource modelling, response types, status codes, or OpenAPI metadata are involved.
+
+## True REST resource modelling
+
+The URL identifies a **resource** — an addressable thing with its own identity and lifecycle. Properties of a resource are not resources.
+
+### Properties belong on the resource
+
+If a concept is an attribute of a resource, it is part of that resource's representation — not a sub-resource with its own URL.
+
+```
+// Wrong — writeback is a property of the group, not a resource
+GET /groups/{groupId}/writeback
+
+// Correct — the full group representation includes all its properties
+GET /groups/{groupId}
+```
+
+The server may need extra roundtrips internally to populate certain fields. That is an implementation detail and must not leak into the API contract. The client always receives a complete, consistent representation.
+
+Do not use query parameters (e.g. `?include=writeback`) to conditionally include or exclude properties for performance reasons. The server decides what a resource representation contains.
+
+### When is a sub-resource appropriate?
+
+Give something its own URL only when it has independent identity — it can be created, deleted, or linked to independently of the parent.
+
+| Concept | Has independent identity? | Approach |
+|---|---|---|
+| Group writeback settings | No — part of the group | Property on `GET /groups/{groupId}` |
+| Group members | Yes — members exist independently | Sub-resource: `GET /groups/{groupId}/members` |
+| An invitation | Yes — has its own lifecycle | Sub-resource: `GET /invitations/{invitationId}` |
+
+### Partial updates — PATCH over sub-resources
+
+When a client needs to update a subset of a resource's properties, use `PATCH` on the resource — not a dedicated URL for the property.
+
+```
+// Wrong — treating a property as a writable sub-resource
+PUT /groups/{groupId}/writeback
+
+// Correct — partial update on the resource
+PATCH /groups/{groupId}
+Body: { "writeback": { "enabled": true } }
+```
+
+Use `PUT` when replacing the full resource representation. Use `PATCH` for partial updates.
 
 ## Primary approach: TypedResults
 
