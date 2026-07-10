@@ -123,7 +123,7 @@ Every test must contain the Arrange, Act, and Assert sections in this order, eac
 
 Basic form:
 
-```text
+```csharp
 //// Arrange
 
 //// Act
@@ -133,7 +133,7 @@ Basic form:
 
 When the test allocates external resources that must be released regardless of outcome, wrap the body in a `try/finally` block and add a `Cleanup` section in the `finally`:
 
-```text
+```csharp
 try
 {
     //// Arrange
@@ -317,6 +317,11 @@ Better (explicit null guard with a clear failure message):
 result.ShouldNotBeNull();
 result.Item.ClientId.ShouldBe(clientId);
 ```
+
+## Self-contained tests
+Prefer having the full context for a test inside the test method itself. Arrange sections should declare their own dependencies, data, and state inline rather than relying on class-level fields, static helpers, or shared fixture state.
+
+Fixtures (`IClassFixture`, `ICollectionFixture`) are acceptable for genuinely expensive one-time infrastructure — such as starting a test server or a database container — but test-specific data and setup should always live inside the test.
 
 ## General principles
 - Tests read like executable specifications.
