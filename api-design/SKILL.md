@@ -271,6 +271,42 @@ Use `System.Net.Mime.MediaTypeNames` constants instead of raw strings for media 
 
 This applies everywhere a media type string appears: `[Produces]`, `[Consumes]`, `Content-Type` headers set manually, and OpenAPI metadata.
 
+## URL casing and formatting
+
+Route templates must use lowercase kebab-case segments — no PascalCase, camelCase, or underscores.
+
+```csharp
+// Wrong
+[Route("api/OrderItems")]
+[HttpGet("{orderId}")]
+
+// Correct
+[Route("api/order-items")]
+[HttpGet("{orderId}")]
+```
+
+Enforce globally via `Program.cs`:
+
+```csharp
+builder.Services.Configure<RouteOptions>(static options =>
+{
+    options.LowercaseUrls = true;
+    options.LowercaseQueryStrings = true;
+});
+```
+
+Enum values serialized in API responses and requests must also use lowercase kebab-case:
+
+```csharp
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(
+        new JsonStringEnumConverter(JsonNamingPolicy.KebabCaseLower));
+});
+```
+
+This ensures `OrderStatus.PendingApproval` serializes as `"pending-approval"` rather than `"PendingApproval"` or `"PENDING_APPROVAL"`.
+
 ## Enforcement
 
 - Use PR checklists that reference this skill.
