@@ -323,6 +323,57 @@ Prefer having the full context for a test inside the test method itself. Arrange
 
 Fixtures (`IClassFixture`, `ICollectionFixture`) are acceptable for genuinely expensive one-time infrastructure — such as starting a test server or a database container — but test-specific data and setup should always live inside the test.
 
+## Extract large helpers to dedicated files
+
+Keep helper methods and classes inside test files short — no more than a few lines. When a helper grows beyond that, extract it to a dedicated file.
+
+Rules:
+- Inline helper methods should be roughly ≤5 lines. Beyond that, move them out.
+- Place extracted helpers in a `Helpers/` directory that mirrors the test's feature path.
+- Prefer extension methods over static helper classes for reusability and discoverability.
+- Name the file after the type it extends (e.g., `HttpResponseMessageExtensions.cs`).
+- Keep helpers test-framework-agnostic where possible — avoid xUnit-specific dependencies in extracted code.
+
+Bad — bloated helper inline in a test file:
+
+```csharp
+private static async Task<string> ExtractFieldAsync(
+    HttpResponseMessage response, string fieldName)
+{
+    var body = await response.Content.ReadAsStringAsync();
+    using var doc = JsonDocument.Parse(body);
+    var token = doc.RootElement.GetProperty(fieldName);
+    return token.GetString() ?? string.Empty;
+}
+```
+
+Good — extracted to `Helpers/HttpResponseMessageExtensions.cs`:
+
+```csharp
+internal static class HttpResponseMessageExtensions
+{
+    internal static async Task<string> ExtractFieldAsync(
+        this HttpResponseMessage response, string fieldName)
+    {
+        var body = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(body);
+        var token = doc.RootElement.GetProperty(fieldName);
+        return token.GetString() ?? string.Empty;
+    }
+}
+```
+
+Usage in the test file:
+
+```csharp
+//// Act
+var response = await client.GetAsync("/api/orders/1");
+
+//// Assert
+var clientId = await response.ExtractFieldAsync("clientId");
+clientId.ShouldBe("abc-123");
+```
+
 ## General principles
 - Tests read like executable specifications.
 - One behavior per test.

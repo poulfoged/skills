@@ -8,18 +8,23 @@ This repository contains agent skills that provide consistent, enforceable guide
 
 ## Available Skills
 
-### [api-documentation](./api-documentation/)
-Enforce OpenAPI documentation standards for ASP.NET Core APIs including status code declarations, TypedResults usage, ProblemDetails contracts, and response metadata.
+### [api-design](./api-design/)
+Enforce API design standards for ASP.NET Core APIs including versioning strategy, status code declarations, TypedResults usage, ProblemDetails contracts, and response metadata.
 
 **Coverage:**
+- True REST resource modelling (properties vs sub-resources, PATCH over sub-resources)
+- Versioning strategy (URL-prefix, not header or content-negotiation)
 - TypedResults as the primary response documentation mechanism
 - Standard status code catalogue (200, 201, 204, 400, 401, 403, 404, 408, 409, 422, 500)
 - 408 for client abort/disconnect
 - ProblemDetails for all 4xx and 5xx responses
 - `[ProducesResponseType]` for supplemental descriptions
 - Do-not-use guidance for `[SwaggerResponse]`
+- URL casing (lowercase kebab-case) and enum formatting
+- OpenAPI metadata conventions (`[ExcludeFromDescription]`, `[Tags]`, `[EndpointDescription]`, `[EndpointSummary]`)
+- Strongly typed `IOptions<T>` over raw `IConfiguration`
 
-**Use when:** Documenting or reviewing API response types, status codes, or OpenAPI metadata.
+**Use when:** Designing, documenting, or reviewing ASP.NET Core APIs — versioning strategy, status codes, TypedResults, or OpenAPI metadata.
 
 ---
 
@@ -82,6 +87,7 @@ Copy the desired skill folders to your project:
 mkdir -p .opencode/skills
 
 # Copy skills you want to use
+cp -r /path/to/this/repo/api-design .opencode/skills/
 cp -r /path/to/this/repo/csharp-development .opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills .opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture .opencode/skills/
@@ -96,6 +102,7 @@ Install skills globally for use across all projects:
 mkdir -p ~/.config/opencode/skills
 
 # Copy skills
+cp -r /path/to/this/repo/api-design ~/.config/opencode/skills/
 cp -r /path/to/this/repo/csharp-development ~/.config/opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills ~/.config/opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture ~/.config/opencode/skills/
