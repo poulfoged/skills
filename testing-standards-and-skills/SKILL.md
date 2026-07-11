@@ -119,15 +119,46 @@ Has_been_posted_returns_false_when_not_posted
 ```
 
 ## Required test structure
-Every test must contain exactly three sections in this order, each prefixed with four slashes:
+Every test must contain the Arrange, Act, and Assert sections in this order, each prefixed with four slashes (`////`).
 
-```text
+Basic form:
+
+```csharp
 //// Arrange
+
 //// Act
+
 //// Assert
 ```
 
-No additional sections, comments, or reordering.
+When the test allocates external resources that must be released regardless of outcome, wrap the body in a `try/finally` block and add a `Cleanup` section in the `finally`:
+
+```csharp
+try
+{
+    //// Arrange
+
+    //// Act
+
+    //// Assert
+}
+finally
+{
+    //// Cleanup
+    await CleanupResources();
+}
+```
+
+No other sections, no reordering.
+
+## Quad-slash is reserved
+The `////` prefix is reserved exclusively for the four section labels: `Arrange`, `Act`, `Assert`, and `Cleanup`. Do not use four leading slashes for any other comment.
+
+Each label may carry an optional clarifying note after a dash:
+
+```csharp
+//// Cleanup - delete the group after testing
+```
 
 ## Section rules
 Arrange:
@@ -144,6 +175,11 @@ Assert:
 - Assert one outcome.
 - Use Shouldly assertions only.
 - Avoid logic, branching, or transformations inside assertions.
+
+Cleanup:
+- Only present when external resources (database records, files, API-created objects, etc.) need to be torn down after the test.
+- Always placed in a `finally` block so it runs even if Arrange, Act, or Assert throws.
+- Keep it minimal — undo only what this test created.
 
 ## Canonical example
 
@@ -180,6 +216,35 @@ public void Calculate_returns_correct_sum_for_v1_interface()
 
     //// Assert
     result.ShouldBe(5);
+}
+```
+
+Example with cleanup:
+
+```csharp
+[Fact]
+[Trait("Category", "Integration")]
+public async Task CreateGroup_creates_and_returns_group()
+{
+    string? groupId = null;
+
+    try
+    {
+        //// Arrange
+        var service = _serviceProvider.GetRequiredService<IGroupService>();
+
+        //// Act
+        groupId = await service.CreateGroupAsync("test-group");
+
+        //// Assert
+        groupId.ShouldNotBeNullOrEmpty();
+    }
+    finally
+    {
+        //// Cleanup - delete the group after testing
+        if (groupId is not null)
+            await service.DeleteGroupAsync(groupId);
+    }
 }
 ```
 
@@ -252,6 +317,11 @@ Better (explicit null guard with a clear failure message):
 result.ShouldNotBeNull();
 result.Item.ClientId.ShouldBe(clientId);
 ```
+
+## Self-contained tests
+Prefer having the full context for a test inside the test method itself. Arrange sections should declare their own dependencies, data, and state inline rather than relying on class-level fields, static helpers, or shared fixture state.
+
+Fixtures (`IClassFixture`, `ICollectionFixture`) are acceptable for genuinely expensive one-time infrastructure — such as starting a test server or a database container — but test-specific data and setup should always live inside the test.
 
 ## General principles
 - Tests read like executable specifications.

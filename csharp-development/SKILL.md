@@ -810,6 +810,75 @@ public async Task<Order?> GetOrderAsync(string orderId, CancellationToken cancel
 }
 ```
 
+## Configuration — prefer strongly typed IOptions<T>
+
+Never inject `IConfiguration` directly into services or controllers. Always bind configuration sections to strongly typed options classes.
+
+Rules:
+- Define a dedicated options class per configuration section.
+- Declare a `public const string ConfigurationSection` on the class matching the `appsettings.json` key.
+- Annotate required properties with data annotations (`[Required]`, `[Url]`, etc.).
+- Register with `AddOptions<T>().BindConfiguration().ValidateDataAnnotations().ValidateOnStart()` so misconfiguration fails at startup, not at runtime.
+- Inject `IOptions<T>` in constructors and access the value via `.Value`.
+- Use `IOptionsSnapshot<T>` when the value must reflect per-request config reloads, or `IOptionsMonitor<T>` for long-running background services that need change notifications.
+
+Bad example (raw IConfiguration):
+
+```csharp
+public class EmailService
+{
+    private readonly string _smtpHost;
+
+    public EmailService(IConfiguration configuration)
+    {
+        _smtpHost = configuration["Email:SmtpHost"]!; // no validation, magic string
+    }
+}
+```
+
+Good example — options class:
+
+```csharp
+public class EmailOptions
+{
+    public const string ConfigurationSection = "Email";
+
+    [Required]
+    public string SmtpHost { get; init; } = string.Empty;
+
+    [Range(1, 65535)]
+    public int SmtpPort { get; init; } = 587;
+}
+```
+
+Registration in `Program.cs`:
+
+```csharp
+services.AddOptions<EmailOptions>()
+    .BindConfiguration(EmailOptions.ConfigurationSection)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+```
+
+Injection and usage:
+
+```csharp
+public class EmailService
+{
+    private readonly EmailOptions _options;
+
+    public EmailService(IOptions<EmailOptions> options)
+    {
+        _options = options.Value;
+    }
+}
+```
+
+When to use each interface:
+- `IOptions<T>` — singleton lifetime; value is fixed for the application lifetime. Use in most cases.
+- `IOptionsSnapshot<T>` — scoped lifetime; re-evaluated per request. Use when config can reload and the service is scoped.
+- `IOptionsMonitor<T>` — singleton lifetime with change notifications. Use in hosted services or singletons that need live reloads.
+
 ## Exception handling and control flow
 
 Avoid using exceptions for control flow. Prefer explicit return types that communicate success or failure.
