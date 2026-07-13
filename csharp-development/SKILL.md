@@ -318,22 +318,28 @@ Benefits:
 
 ## Code organization
 
-### No regions
+### No regions or visual section separators
 
-Do not use `#region` directives to organize code.
+Do not use `#region` directives or comment-based visual separators to organize code.
 
 Rules:
 - Never use `#region` / `#endregion`.
+- Never use comment lines that act as visual dividers, such as:
+  - `// ── private helpers ───────────────────────────────────────────────────────`
+  - `// ----- Constructors -----`
+  - `// ****************************`
+  - Any variation of dashes, underscores, box-drawing characters, or repeated symbols used to draw a horizontal rule.
 - If code needs organization, refactor it into smaller classes or methods.
 - Use proper class design and separation of concerns instead.
 
-Why regions are problematic:
+Why regions and visual separators are problematic:
 - They hide code complexity instead of addressing it.
 - They encourage large, unfocused classes.
 - They make code harder to navigate and understand.
 - Modern IDEs provide better ways to collapse and navigate code.
+- Comment separators are indistinguishable from real comments in diffs and reviews, adding noise without value.
 
-Bad example:
+Bad example (`#region`):
 
 ```csharp
 public class OrderService
@@ -363,7 +369,29 @@ public class OrderService
 }
 ```
 
-Good example (no regions needed):
+Bad example (comment-based visual separators):
+
+```csharp
+public class OrderService
+{
+    // ── Fields ───────────────────────────────────────────────────────────────
+    private readonly IOrderRepository _orderRepository;
+    private readonly ILogger _logger;
+
+    // ── Constructor ──────────────────────────────────────────────────────────
+    public OrderService(IOrderRepository orderRepository, ILogger logger)
+    {
+        _orderRepository = orderRepository;
+        _logger = logger;
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
+    private void ValidateOrder() { }
+    private void SaveOrder() { }
+}
+```
+
+Good example (no regions or separators needed):
 
 ```csharp
 public class OrderService
@@ -385,7 +413,7 @@ public class OrderService
 }
 ```
 
-If a class needs regions to be "organized," it's a sign the class is doing too much and should be split into smaller, focused classes.
+If a class needs regions or visual separators to be "organized," it's a sign the class is doing too much and should be split into smaller, focused classes.
 
 ### Using directives
 
