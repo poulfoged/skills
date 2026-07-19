@@ -1127,6 +1127,135 @@ When to keep `string`:
 
 At serialization boundaries (e.g., request/response models), accept primitives if needed and map to real types in the domain model. Never propagate raw primitives deeper than the boundary layer.
 
+## Value objects
+
+Use value objects to encapsulate domain concepts with built-in validation, rather than passing raw primitives around. Prefer `record` types for value objects — they get value-based equality, `ToString`, and deconstruction for free. If you must use a class (non-record), implement `Equals` and `GetHashCode` manually.
+
+### Requirements
+
+- Implement `IParsable<T>` so the type supports parsing and TryParse consistently.
+- Declare a private static `IsValid` method that contains all validation logic.
+- Call `IsValid` from both the constructor (guards against invalid construction) and `TryParse` (returns false instead of throwing).
+- For non-record types, override `Equals` and `GetHashCode` based on the underlying value.
+
+### Record (preferred)
+
+```csharp
+public sealed record Email : IParsable<Email>
+{
+    public string Value { get; }
+
+    public Email(string value)
+    {
+        if (!IsValid(value))
+            throw new ArgumentException($"Invalid email: {value}", nameof(value));
+
+        Value = value;
+    }
+
+    public static Email Parse(string s, IFormatProvider? provider = null)
+    {
+        if (!TryParse(s, provider, out var result))
+            throw new FormatException($"Invalid email: {s}");
+
+        return result;
+    }
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out Email? result)
+    {
+        result = null;
+
+        if (string.IsNullOrWhiteSpace(s))
+            return false;
+
+        if (!IsValid(s))
+            return false;
+
+        result = new Email(s);
+        return true;
+    }
+
+    private static bool IsValid(string value) =>
+        value.Contains('@') && value.Length <= 254;
+}
+```
+
+### Non-record class
+
+```csharp
+public sealed class PhoneNumber : IParsable<PhoneNumber>
+{
+    public string Value { get; }
+
+    public PhoneNumber(string value)
+    {
+        if (!IsValid(value))
+            throw new ArgumentException($"Invalid phone number: {value}", nameof(value));
+
+        Value = value;
+    }
+
+    public static PhoneNumber Parse(string s, IFormatProvider? provider = null)
+    {
+        if (!TryParse(s, provider, out var result))
+            throw new FormatException($"Invalid phone number: {s}");
+
+        return result;
+    }
+
+    public static bool TryParse(string? s, IFormatProvider? provider, out PhoneNumber? result)
+    {
+        result = null;
+
+        if (string.IsNullOrWhiteSpace(s))
+            return false;
+
+        if (!IsValid(s))
+            return false;
+
+        result = new PhoneNumber(s);
+        return true;
+    }
+
+    private static bool IsValid(string value) =>
+        value.All(c => char.IsDigit(c) || c is '+' or '-' or ' ');
+
+    public override bool Equals(object? obj) =>
+        obj is PhoneNumber other && Value == other.Value;
+
+    public override int GetHashCode() =>
+        Value.GetHashCode();
+
+    public override string ToString() => Value;
+}
+```
+
+### Usage
+
+```csharp
+// Construction with validation
+var email = new Email("user@example.com");
+
+// Parsing
+if (Email.TryParse("invalid", out var parsed))
+{
+    // use parsed
+}
+
+// Serialization roundtrip
+var json = JsonSerializer.Serialize(email);
+var deserialized = JsonSerializer.Deserialize<Email>(json);
+```
+
+`System.Text.Json` can serialize and deserialize `IParsable<T>` types natively when the `JsonSerializerOptions` include `JsonSerializerFeatures.PopulateFieldsAndProperties` and the type has a public constructor or factory. For full control, register a custom `JsonConverter<T>`.
+
+### When to use value objects
+
+- The value has validation rules beyond a simple null/empty check.
+- The same primitive appears in multiple places with the same validation (DRY the rules).
+- You want to make illegal states unrepresentable.
+- The type benefits from parsing logic that belongs with the data, not scattered across callers.
+
 ## Test assertions
 
 Keep test assertions clean and minimal by asserting only what's necessary.
