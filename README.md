@@ -76,6 +76,21 @@ Structure ASP.NET Core applications around vertical feature folders with isolate
 
 ---
 
+### [grill-me](./grill-me/)
+Grill the user relentlessly about a plan, decision, or idea to stress-test their thinking.
+
+**Coverage:**
+- Design-tree modelling of decisions and their dependents
+- Round-based questioning limited to the current "frontier" of unblocked decisions
+- Numbered questions with a recommended answer for each
+- Fact-finding delegated to sub-agents instead of asking the user
+- Non-blocking exploration — unrelated frontier questions proceed while facts are gathered
+- Session ends only when the full design tree has been visited
+
+**Use when:** The user wants to stress-test a plan, decision, or idea, or uses any 'grill' trigger phrases.
+
+---
+
 ## Installation
 
 ### Project-Level Installation
@@ -91,6 +106,7 @@ cp -r /path/to/this/repo/api-design .opencode/skills/
 cp -r /path/to/this/repo/csharp-development .opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills .opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture .opencode/skills/
+cp -r /path/to/this/repo/grill-me .opencode/skills/
 ```
 
 ### Global Installation
@@ -106,6 +122,7 @@ cp -r /path/to/this/repo/api-design ~/.config/opencode/skills/
 cp -r /path/to/this/repo/csharp-development ~/.config/opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills ~/.config/opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture ~/.config/opencode/skills/
+cp -r /path/to/this/repo/grill-me ~/.config/opencode/skills/
 ```
 
 ### Alternative Paths

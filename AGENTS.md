@@ -60,3 +60,4 @@ Skills must be placed in one of these locations to be auto-discovered:
 | `csharp-development` | Creating, modifying, or reviewing C# / .NET code |
 | `testing-standards-and-skills` | Writing or reviewing xUnit tests |
 | `feature-sliced-architecture` | Building or refactoring ASP.NET Core apps with feature folders |
+| `grill-me` | Stress-testing a plan, decision, or idea, or on any 'grill' trigger phrase |
