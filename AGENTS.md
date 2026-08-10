@@ -56,6 +56,7 @@ Skills must be placed in one of these locations to be auto-discovered:
 
 | Skill | When to load |
 |---|---|
+| `software-development` | Any code review/design work — SOLID principles, Boy Scout principle, naming clarity, value objects, exception handling, encapsulation, regardless of language |
 | `api-design` | Designing, documenting, or reviewing ASP.NET Core APIs — versioning strategy, status codes, TypedResults, or OpenAPI metadata |
 | `csharp-development` | Creating, modifying, or reviewing C# / .NET code |
 | `testing-standards-and-skills` | Writing or reviewing xUnit tests |

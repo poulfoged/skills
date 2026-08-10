@@ -1,6 +1,6 @@
 ---
 name: csharp-development
-description: Enforce C# coding standards and best practices for .NET applications.
+description: Enforce C#/.NET-specific coding conventions — casing, project setup, using directives, CancellationToken propagation, IOptions<T> configuration, and syntax-level idioms. For language-agnostic design principles (SOLID, naming clarity, value objects, exception handling), see the software-development skill.
 license: Proprietary
 compatibility: opencode
 metadata:
@@ -10,9 +10,11 @@ metadata:
 
 ## What I do
 
-- Enforce mandatory C# coding conventions and best practices.
+- Enforce mandatory C#/.NET-specific coding conventions: casing, project setup, using directives, CancellationToken propagation, `IOptions<T>` configuration, and other syntax-level idioms.
 - Review new and modified C# code for style, structure, and maintainability.
 - Provide compliant examples and direct fixes when code violates standards.
+
+For language-agnostic design principles that apply regardless of language (SOLID, Boy Scout principle, early returns, naming clarity, real types over primitives, value objects, exception handling as control flow, encapsulation), see the `software-development` skill.
 
 ## When to use me
 
@@ -104,30 +106,7 @@ Rules:
 - If suppression is required, document the reason with a comment.
 - Treat warnings as errors in CI/CD pipelines.
 
-### Boy Scout principle
-
-Always leave the code better than you found it.
-
-Rules:
-- When touching existing code, improve it incrementally.
-- Fix nearby code smells, outdated patterns, or technical debt when reasonable.
-- Refactor for clarity, even if not directly related to your task.
-- Update outdated comments and documentation.
-- Remove unused code, imports, and variables.
-
-Examples of Boy Scout improvements:
-- Rename unclear variables while implementing a feature.
-- Extract long methods into smaller, more focused methods.
-- Add missing XML documentation to public APIs.
-- Replace magic numbers with named constants.
-- Update deprecated API usage to modern alternatives.
-
-Do not:
-- Make unrelated changes that obscure the main purpose of your work.
-- Refactor entire modules when making a small fix.
-- Introduce breaking changes without discussion.
-
-The Boy Scout principle applies to every change, no matter how small.
+For SOLID design principles and general engineering practices (Boy Scout principle, early returns, naming clarity, real types over primitives, value objects, exception handling, encapsulation), see the `software-development` skill.
 
 ## Naming conventions
 
@@ -148,68 +127,11 @@ Rules:
 
 ### No abbreviated names
 
-Always use full, descriptive names for variables, parameters, and fields. Never shorten names for brevity.
-
-Rules:
-- Write out the full word or phrase that describes the concept.
-- Do not use single-letter names, acronyms, or truncations except for universally understood loop counters (`i`, `j`) in trivial loops.
-- This applies to parameters, locals, fields, and type parameters.
-
-Bad examples:
-
-```csharp
-CancellationToken ct
-HttpClient hc
-IOrderRepository repo
-ILogger l
-string usr
-```
-
-Good examples:
-
-```csharp
-CancellationToken cancellationToken
-HttpClient httpClient
-IOrderRepository orderRepository
-ILogger logger
-string username
-```
+See the `software-development` skill for the general naming-clarity rule (no abbreviations, no shortened identifiers).
 
 ### Storage-agnostic naming for stores
 
-Never name a class after the storage technology it uses. Classes like `UserStore`, `OrderRepository`, or `ProductStore` should reflect the domain concept, not the underlying infrastructure.
-
-Bad examples:
-
-```csharp
-public class SqlServerUserStore : IUserStore { }
-public class ElasticsearchOrderRepository : IOrderRepository { }
-public class MongoDbProductStore : IProductStore { }
-public class RedisCacheStore : ICacheStore { }
-```
-
-Good examples:
-
-```csharp
-public class UserStore : IUserStore { }
-public class OrderRepository : IOrderRepository { }
-public class ProductStore : IProductStore { }
-public class CacheStore : ICacheStore { }
-```
-
-If you need to differentiate implementations (e.g., for testing), use the technology name in the namespace, not the class name:
-
-```csharp
-// File: Infrastructure/Stores/SqlServer/CacheStore.cs
-namespace MyProject.Infrastructure.Stores.SqlServer;
-
-public class CacheStore : ICacheStore { }
-```
-
-Rules:
-- The class name must describe only the domain concept (`UserStore`, `OrderRepository`).
-- Storage technology (`SqlServer`, `Elasticsearch`, `Redis`, `MongoDb`) goes in the namespace or project folder, never the type name.
-- Test doubles follow the same rule: `FakeUserStore`, `InMemoryOrderRepository`, `SpyCacheStore` — not `FakeSqlServerUserStore`.
+See the `software-development` skill for the rule against naming classes after their storage technology.
 
 ### camelCase for private members
 
@@ -318,102 +240,7 @@ Benefits:
 
 ## Code organization
 
-### No regions or visual section separators
-
-Do not use `#region` directives or comment-based visual separators to organize code.
-
-Rules:
-- Never use `#region` / `#endregion`.
-- Never use comment lines that act as visual dividers, such as:
-  - `// ── private helpers ───────────────────────────────────────────────────────`
-  - `// ----- Constructors -----`
-  - `// ****************************`
-  - Any variation of dashes, underscores, box-drawing characters, or repeated symbols used to draw a horizontal rule.
-- If code needs organization, refactor it into smaller classes or methods.
-- Use proper class design and separation of concerns instead.
-
-Why regions and visual separators are problematic:
-- They hide code complexity instead of addressing it.
-- They encourage large, unfocused classes.
-- They make code harder to navigate and understand.
-- Modern IDEs provide better ways to collapse and navigate code.
-- Comment separators are indistinguishable from real comments in diffs and reviews, adding noise without value.
-
-Bad example (`#region`):
-
-```csharp
-public class OrderService
-{
-    #region Fields
-    private readonly IOrderRepository _orderRepository;
-    private readonly ILogger _logger;
-    #endregion
-    
-    #region Constructor
-    public OrderService(IOrderRepository orderRepository, ILogger logger)
-    {
-        _orderRepository = orderRepository;
-        _logger = logger;
-    }
-    #endregion
-    
-    #region Public Methods
-    public void CreateOrder() { }
-    public void UpdateOrder() { }
-    #endregion
-    
-    #region Private Methods
-    private void ValidateOrder() { }
-    private void SaveOrder() { }
-    #endregion
-}
-```
-
-Bad example (comment-based visual separators):
-
-```csharp
-public class OrderService
-{
-    // ── Fields ───────────────────────────────────────────────────────────────
-    private readonly IOrderRepository _orderRepository;
-    private readonly ILogger _logger;
-
-    // ── Constructor ──────────────────────────────────────────────────────────
-    public OrderService(IOrderRepository orderRepository, ILogger logger)
-    {
-        _orderRepository = orderRepository;
-        _logger = logger;
-    }
-
-    // ── Private helpers ──────────────────────────────────────────────────────
-    private void ValidateOrder() { }
-    private void SaveOrder() { }
-}
-```
-
-Good example (no regions or separators needed):
-
-```csharp
-public class OrderService
-{
-    private readonly IOrderRepository _orderRepository;
-    private readonly ILogger _logger;
-    
-    public OrderService(IOrderRepository orderRepository, ILogger logger)
-    {
-        _orderRepository = orderRepository;
-        _logger = logger;
-    }
-    
-    public void CreateOrder() { }
-    public void UpdateOrder() { }
-    
-    private void ValidateOrder() { }
-    private void SaveOrder() { }
-}
-```
-
-If a class needs regions or visual separators to be "organized," it's a sign the class is doing too much and should be split into smaller, focused classes.
+For the general rule against regions and visual comment separators, see the `software-development` skill.
 
 ### Using directives
 
@@ -722,90 +549,6 @@ public void UpdateUser(string userId, string? email = null)
 }
 ```
 
-## Early returns
-
-Always prefer early returns to reduce nesting and improve readability. Exit methods as soon as conditions are met.
-
-Rules:
-- Return early when failure conditions are met.
-- Avoid wrapping the entire method body in an if statement when the method ends with it.
-- Invert conditions to enable early returns when the negative case should exit.
-- Reduce indentation by handling edge cases first.
-
-Bad example (nested if at the end):
-
-```csharp
-public async Task ValidateResponse(HttpResponseMessage response, HttpStatusCode expectedStatus, string clientId)
-{
-    response.StatusCode.ShouldBe(expectedStatus);
-    
-    if (expectedStatus == OK)
-    {
-        var result = await response.Content.ReadFromJsonAsync<ItemResponse<WorkloadClientDto>>(JsonOptions);
-        result.ShouldNotBeNull();
-        result.Item.ShouldNotBeNull();
-        result.Item.ClientId.ShouldBe(clientId);
-    }
-}
-```
-
-Good example (early return):
-
-```csharp
-public async Task ValidateResponse(HttpResponseMessage response, HttpStatusCode expectedStatus, string clientId)
-{
-    response.StatusCode.ShouldBe(expectedStatus);
-    
-    if (expectedStatus != OK)
-    {
-        return;
-    }
-    
-    var result = await response.Content.ReadFromJsonAsync<ItemResponse<WorkloadClientDto>>(JsonOptions);
-    result?.Item?.ClientId.ShouldBe(clientId);
-}
-```
-
-Benefits:
-- Reduces nesting levels and improves readability.
-- Makes the happy path clear by handling edge cases first.
-- Easier to add additional logic without increasing complexity.
-- Aligns with guard clause patterns.
-
-More examples:
-
-```csharp
-// Bad: nested validation
-public void ProcessOrder(Order order)
-{
-    if (order != null)
-    {
-        if (order.IsValid)
-        {
-            if (order.Total > 0)
-            {
-                // Process order...
-            }
-        }
-    }
-}
-
-// Good: early returns
-public void ProcessOrder(Order order)
-{
-    if (order == null)
-        return;
-    
-    if (!order.IsValid)
-        return;
-    
-    if (order.Total <= 0)
-        return;
-    
-    // Process order...
-}
-```
-
 ## CancellationToken usage
 
 All async methods must accept and propagate a `CancellationToken`.
@@ -909,56 +652,7 @@ When to use each interface:
 
 ## Exception handling and control flow
 
-Avoid using exceptions for control flow. Prefer explicit return types that communicate success or failure.
-
-Rules:
-- Do not throw exceptions for expected conditions or business rule violations.
-- Use result types (e.g., `Result<T>`, `OneOf<T, TError>`, or nullable types) to represent success/failure outcomes.
-- Reserve exceptions for truly exceptional situations (infrastructure failures, unexpected states).
-- Let unhandled exceptions flow up to the controller level.
-
-Exception handling at controller level:
-- Handle exceptions at the controller level using middleware or exception filters.
-- Return appropriate HTTP status codes with `ProblemDetails`.
-- Use standardized error responses for consistency.
-
-Bad example (control flow via exceptions):
-
-```csharp
-public Order GetOrder(string orderId)
-{
-    var order = _repository.FindById(orderId);
-    if (order == null)
-    {
-        throw new OrderNotFoundException(orderId); // Bad: using exception for control flow
-    }
-    return order;
-}
-```
-
-Good example (explicit return type):
-
-```csharp
-public Order? GetOrder(string orderId)
-{
-    return _repository.FindById(orderId); // Caller checks for null
-}
-
-// Or with result type:
-public Result<Order> GetOrder(string orderId)
-{
-    var order = _repository.FindById(orderId);
-    return order != null 
-        ? Result<Order>.Success(order)
-        : Result<Order>.Failure("Order not found");
-}
-```
-
-### Result type for flow control
-
-If needed, you may add a small `Result<T, TError>` type to handle flow control rather than throwing exceptions.
-
-Implementation:
+For the general principle of avoiding exceptions for control flow and preferring explicit result types, see the `software-development` skill. In this codebase, the concrete `Result<T, TError>` shape is:
 
 ```csharp
 public readonly struct Result<T, TError> where TError : notnull
@@ -1092,48 +786,14 @@ var account = UserAccountRequest.Map(request);
 
 ## Use real types over primitives
 
-Prefer purpose-built types over raw primitives when a richer type exists and accurately represents the value's intent.
-
-Rules:
-- Use `System.Uri` instead of `string` for URLs and URIs.
-- Use `Guid` instead of `string` for identifiers that are GUIDs.
-- Use strongly-typed ID types (e.g., `TypeId`, `CustomerId`, `OrderId`) instead of `string` or `Guid` when the domain has specific ID types.
-- Use `DateTimeOffset` instead of `string` for timestamps.
-- Use `decimal` instead of `double` or `string` for monetary values.
-- Use enums instead of `string` or `int` for fixed sets of values.
-
-Bad examples:
-
-```csharp
-public string WebhookUrl { get; set; }          // should be Uri
-public string CustomerId { get; set; }           // should be Guid or CustomerId
-public string OrderId { get; set; }              // should be typed ID
-public string CreatedAt { get; set; }            // should be DateTimeOffset
-```
-
-Good examples:
-
-```csharp
-public Uri WebhookUrl { get; set; }
-public Guid CustomerId { get; set; }
-public OrderId OrderId { get; set; }             // strongly-typed ID
-public DateTimeOffset CreatedAt { get; set; }
-```
-
-When to keep `string`:
-- The value truly has no more specific type (e.g., a free-text name or description).
-- Interoperability constraints require it (e.g., serialization boundaries where the richer type cannot be used).
-- The value may contain formats not representable by the target type.
-
-At serialization boundaries (e.g., request/response models), accept primitives if needed and map to real types in the domain model. Never propagate raw primitives deeper than the boundary layer.
+See the `software-development` skill for the general rule against primitive obsession. The C#-specific types to prefer: `System.Uri`, `Guid`, strongly-typed ID types, `DateTimeOffset`, and `decimal`.
 
 ## Value objects
 
-Use value objects to encapsulate domain concepts with built-in validation, rather than passing raw primitives around. Prefer `record` types for value objects — they get value-based equality, `ToString`, and deconstruction for free. If you must use a class (non-record), implement `Equals` and `GetHashCode` manually.
+See the `software-development` skill for the general value-object pattern. The C#-specific implementation:
 
-### Requirements
-
-- Implement `IParsable<T>` so the type supports parsing and TryParse consistently.
+- Prefer `record` types for value objects — they get value-based equality, `ToString`, and deconstruction for free. If you must use a class (non-record), implement `Equals` and `GetHashCode` manually.
+- Implement `IParsable<T>` so the type supports parsing and `TryParse` consistently.
 - Declare a private static `IsValid` method that contains all validation logic.
 - Call `IsValid` from both the constructor (guards against invalid construction) and `TryParse` (returns false instead of throwing).
 - For non-record types, override `Equals` and `GetHashCode` based on the underlying value.
@@ -1249,13 +909,6 @@ var deserialized = JsonSerializer.Deserialize<Email>(json);
 
 `System.Text.Json` can serialize and deserialize `IParsable<T>` types natively when the `JsonSerializerOptions` include `JsonSerializerFeatures.PopulateFieldsAndProperties` and the type has a public constructor or factory. For full control, register a custom `JsonConverter<T>`.
 
-### When to use value objects
-
-- The value has validation rules beyond a simple null/empty check.
-- The same primitive appears in multiple places with the same validation (DRY the rules).
-- You want to make illegal states unrepresentable.
-- The type benefits from parsing logic that belongs with the data, not scattered across callers.
-
 ## Test assertions
 
 Keep test assertions clean and minimal by asserting only what's necessary.
@@ -1296,7 +949,7 @@ In most cases, use the null-conditional operator and assert the final value dire
 
 ## Accessibility — prefer the most restrictive modifier
 
-Always declare classes, types, and members with the most restrictive access modifier possible.
+See the `software-development` skill for the general encapsulation principle. In C#:
 
 Rules:
 - Default to `private`. Widen to `internal`, `protected`, or `public` only when genuinely required.

@@ -8,7 +8,26 @@ This repository contains agent skills that provide consistent, enforceable guide
 
 ## Available Skills
 
+### [software-development](./software-development/)
+Enforce language-agnostic software engineering principles — SOLID design, the Boy Scout principle, early returns, naming clarity, real types over primitives, value objects, exception handling, and encapsulation.
+
+**Coverage:**
+- SOLID principles (Single Responsibility, Open/Closed — priority, Liskov Substitution, Interface Segregation, Dependency Inversion)
+- Boy Scout principle (leave code better than you found it)
+- Early returns and guard clauses
+- Naming clarity (no abbreviations, storage-agnostic naming for stores)
+- Real types over primitives (avoiding primitive obsession)
+- Value objects with built-in validation
+- Exception handling as control flow (result types over throwing)
+- Encapsulation via most-restrictive accessibility
+- No regions or visual comment separators
+
+**Use when:** Creating, modifying, or reviewing code in any language — especially when evaluating extensibility, coupling, class responsibilities, naming, or how errors/nulls are represented.
+
+---
+
 ### [api-design](./api-design/)
+
 Enforce API design standards for ASP.NET Core APIs including versioning strategy, status code declarations, TypedResults usage, ProblemDetails contracts, and response metadata.
 
 **Coverage:**
@@ -29,15 +48,19 @@ Enforce API design standards for ASP.NET Core APIs including versioning strategy
 ---
 
 ### [csharp-development](./csharp-development/)
-Enforce C# coding standards and best practices for .NET applications.
+Enforce C#/.NET-specific coding conventions — casing, project setup, using directives, CancellationToken propagation, IOptions<T> configuration, and syntax-level idioms. For language-agnostic design principles, see `software-development`.
 
 **Coverage:**
-- Core principles (zero warnings, Boy Scout principle)
+- .NET 10 project conventions (`global.json`, central package management, `Directory.Build.props`)
 - Naming conventions (PascalCase/camelCase)
-- Global usings and code organization
-- Exception handling and control flow
-- Fluent API formatting
+- Global usings and using directive ordering
 - Namespace and folder structure alignment
+- Regex timeout requirements
+- Pattern matching over null checks
+- CancellationToken propagation
+- Strongly typed `IOptions<T>` configuration
+- Model mapping conventions
+- Test assertion cleanliness
 
 **Use when:** Creating, modifying, or reviewing C# code in .NET projects.
 
@@ -102,6 +125,7 @@ Copy the desired skill folders to your project:
 mkdir -p .opencode/skills
 
 # Copy skills you want to use
+cp -r /path/to/this/repo/software-development .opencode/skills/
 cp -r /path/to/this/repo/api-design .opencode/skills/
 cp -r /path/to/this/repo/csharp-development .opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills .opencode/skills/
@@ -118,6 +142,7 @@ Install skills globally for use across all projects:
 mkdir -p ~/.config/opencode/skills
 
 # Copy skills
+cp -r /path/to/this/repo/software-development ~/.config/opencode/skills/
 cp -r /path/to/this/repo/api-design ~/.config/opencode/skills/
 cp -r /path/to/this/repo/csharp-development ~/.config/opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills ~/.config/opencode/skills/
