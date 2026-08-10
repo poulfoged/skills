@@ -200,6 +200,13 @@ orderRepository
 username
 ```
 
+## Meaningful names and small functions over comments
+
+- Names must be precise enough that no comment is needed to explain intent.
+- Keep functions small and single-level; extract steps instead of commenting them.
+- A comment explaining *what* code does means: rename or extract instead.
+- Comments are for *why* (rationale, tradeoffs), never *what*.
+
 ## Storage-agnostic naming for stores
 
 Never name a class after the storage technology it uses. Classes should reflect the domain concept, not the underlying infrastructure.
@@ -308,6 +315,15 @@ type Email:
 - The same primitive appears in multiple places with the same validation (DRY the rules).
 - You want to make illegal states unrepresentable.
 - The type benefits from parsing logic that belongs with the data, not scattered across callers.
+
+## Code smells
+
+| Smell | Symptom | Refactoring |
+|-------|---------|-------------|
+| **Long Method** | > 10 lines | Extract Method |
+| **Large Class** | > 50 lines, multiple responsibilities | Extract Class |
+| **Long Parameter List** | > 3 parameters | Introduce Parameter Object |
+| **Data Clumps** | Same group of variables appear together | Extract Class |
 
 ## Exception handling and control flow
 
