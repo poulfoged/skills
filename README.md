@@ -114,6 +114,19 @@ Grill the user relentlessly about a plan, decision, or idea to stress-test their
 
 ---
 
+### [concise-writing](./concise-writing/)
+Enforce brevity in agent output, code comments, and markdown docs.
+
+**Coverage:**
+- 4-line guideline for code comments/summaries
+- 4-line guideline for markdown paragraphs
+- No chatty narration in agent responses
+- Target-state-as-fact for anything created or changed within a single PR (no "added X" / "changed Y from A to B")
+
+**Use when:** Any code review, doc writing, PR description, or commit message.
+
+---
+
 ## Installation
 
 ### Project-Level Installation
@@ -131,6 +144,7 @@ cp -r /path/to/this/repo/csharp-development .opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills .opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture .opencode/skills/
 cp -r /path/to/this/repo/grill-me .opencode/skills/
+cp -r /path/to/this/repo/concise-writing .opencode/skills/
 ```
 
 ### Global Installation
@@ -148,6 +162,7 @@ cp -r /path/to/this/repo/csharp-development ~/.config/opencode/skills/
 cp -r /path/to/this/repo/testing-standards-and-skills ~/.config/opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture ~/.config/opencode/skills/
 cp -r /path/to/this/repo/grill-me ~/.config/opencode/skills/
+cp -r /path/to/this/repo/concise-writing ~/.config/opencode/skills/
 ```
 
 ### Alternative Paths
