@@ -127,6 +127,20 @@ Enforce brevity in agent output, code comments, and markdown docs.
 
 ---
 
+### [conventional-commits](./conventional-commits/)
+Enforce Conventional Commits message format.
+
+**Coverage:**
+- `type(scope): description` subject format
+- Type catalogue (`feat`, `fix`, `refactor`, `perf`, `style`, `test`, `docs`, `build`, `ops`, `chore`)
+- Breaking-change indicator (`!`) and `BREAKING CHANGE:` footer
+- Description/body/footer style rules
+- Semver impact (major/minor/patch) per commit type
+
+**Use when:** Writing or reviewing commit messages.
+
+---
+
 ## Installation
 
 ### Project-Level Installation
@@ -145,6 +159,7 @@ cp -r /path/to/this/repo/testing-standards-and-skills .opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture .opencode/skills/
 cp -r /path/to/this/repo/grill-me .opencode/skills/
 cp -r /path/to/this/repo/concise-writing .opencode/skills/
+cp -r /path/to/this/repo/conventional-commits .opencode/skills/
 ```
 
 ### Global Installation
@@ -163,6 +178,7 @@ cp -r /path/to/this/repo/testing-standards-and-skills ~/.config/opencode/skills/
 cp -r /path/to/this/repo/feature-sliced-architecture ~/.config/opencode/skills/
 cp -r /path/to/this/repo/grill-me ~/.config/opencode/skills/
 cp -r /path/to/this/repo/concise-writing ~/.config/opencode/skills/
+cp -r /path/to/this/repo/conventional-commits ~/.config/opencode/skills/
 ```
 
 ### Alternative Paths
