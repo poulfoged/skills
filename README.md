@@ -53,6 +53,7 @@ Enforce C#/.NET-specific coding conventions — casing, project setup, using dir
 **Coverage:**
 - .NET 10 project conventions (`global.json`, central package management, `Directory.Build.props`)
 - Naming conventions (PascalCase/camelCase)
+- Documentation minimalism (self-documenting names over comments, single-line summaries for public interfaces)
 - Global usings and using directive ordering
 - Namespace and folder structure alignment
 - Regex timeout requirements

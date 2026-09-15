@@ -175,6 +175,25 @@ public enum OrderStatus
 }
 ```
 
+## Documentation
+
+Prefer self-documenting names over comments — a sufficiently descriptive class, interface, or method name (methods may be long) should make a comment unnecessary.
+
+When a name alone isn't enough, add a single-line summary directly above it — prioritize this for public interfaces and their members.
+
+```csharp
+public interface IOrderPriceCalculator
+{
+    /// <summary>Applies discount, tax, and shipping to produce the final chargeable amount.</summary>
+    decimal CalculateFinalPrice(Order order);
+}
+```
+
+Rules:
+- No multi-line XML doc blocks (`<param>`, `<returns>`, `<remarks>`) — one line only.
+- No comments that just restate the name (e.g. `// Gets the customer` above `GetCustomer()`).
+- Prefer renaming over adding a comment when possible.
+
 ## Global usings
 
 Use a `Globals.cs` file with global usings when many files share the same using statements.
