@@ -412,17 +412,15 @@ When making exceptions:
 - Ensure the exception provides clear value (discoverability, reduced coupling).
 - Keep exceptions minimal and consistent.
 
-## Regular expressions — always include a timeout
-
-All `Regex` usage must specify an explicit timeout to prevent catastrophic backtracking and ReDoS attacks.
+## Regular expressions — always use GeneratedRegex with a timeout
 
 Rules:
-- Always pass a `TimeSpan` timeout to `Regex` constructor or static methods.
-- When in doubt, use `TimeSpan.FromSeconds(1)`.
-- Use `RegexOptions.NonBacktracking` when available (.NET 7+) as a safer alternative.
-- Store frequently used patterns as compiled `static` `Regex` instances with timeout.
+- Always use the `[GeneratedRegex]` attribute on a `partial static` method instead of `new Regex(...)` or `Regex.IsMatch(...)` for any pattern known at compile time.
+- Always pass `matchTimeoutMilliseconds` in the attribute.
+- Use `RegexOptions.NonBacktracking` where the pattern supports it, combined with `[GeneratedRegex]`.
+- Exception: if the pattern is only known at runtime (built dynamically), fall back to a `static readonly Regex` instance constructed with an explicit `TimeSpan` timeout — this is the only case where `new Regex(...)` is acceptable.
 
-Bad (no timeout):
+Bad (no timeout, not generated):
 
 ```csharp
 if (Regex.IsMatch(input, @"^[a-z]+$"))
@@ -431,38 +429,44 @@ if (Regex.IsMatch(input, @"^[a-z]+$"))
 }
 ```
 
-Good (explicit timeout):
-
-```csharp
-if (Regex.IsMatch(input, @"^[a-z]+$", RegexOptions.None, TimeSpan.FromSeconds(1)))
-{
-    // ...
-}
-```
-
-Better (compiled static instance with timeout):
+Bad (runtime instance for a compile-time-constant pattern):
 
 ```csharp
 private static readonly Regex ValidNamePattern = new(
-    @"^[a-z]+$",
-    RegexOptions.Compiled | RegexOptions.CultureInvariant,
-    TimeSpan.FromSeconds(1));
+    @"^[a-z]+$", RegexOptions.None, TimeSpan.FromSeconds(1));
+```
 
-public bool IsValidName(string input) => ValidNamePattern.IsMatch(input);
+Good:
+
+```csharp
+[GeneratedRegex(@"^[a-z]+$", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+private static partial Regex ValidNameRegex();
+
+public bool IsValidName(string input) => ValidNameRegex().IsMatch(input);
 ```
 
 Best (non-backtracking engine):
 
 ```csharp
-private static readonly Regex ValidNamePattern = new(
-    @"^[a-z]+$",
-    RegexOptions.Compiled | RegexOptions.NonBacktracking | RegexOptions.CultureInvariant,
+[GeneratedRegex(@"^[a-z]+$", RegexOptions.NonBacktracking | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+private static partial Regex ValidNameRegex();
+```
+
+Dynamic pattern exception (pattern only known at runtime):
+
+```csharp
+private static readonly Regex DynamicPattern = new(
+    userSuppliedPattern,
+    RegexOptions.CultureInvariant,
     TimeSpan.FromSeconds(1));
 ```
 
+Note: both the containing class and the method must be declared `partial`.
+
 Do not:
+- Use `new Regex(...)` for a pattern known at compile time — use `[GeneratedRegex]` instead.
 - Use `Regex.Initialize` or `Regex.CompileToAssembly` (deprecated).
-- Omit the timeout argument.
+- Omit the timeout, in either the attribute or the fallback instance.
 - Use `Timeout.Infinite` unless the pattern is proven safe by construction.
 
 ## Pattern matching over null checks
@@ -668,6 +672,24 @@ When to use each interface:
 - `IOptions<T>` — singleton lifetime; value is fixed for the application lifetime. Use in most cases.
 - `IOptionsSnapshot<T>` — scoped lifetime; re-evaluated per request. Use when config can reload and the service is scoped.
 - `IOptionsMonitor<T>` — singleton lifetime with change notifications. Use in hosted services or singletons that need live reloads.
+
+### Required values with no default
+
+For an options property with no sensible default, combine `[Required]` with the `required` modifier and `init`:
+
+```csharp
+public sealed class AzureClientSecretOptions
+{
+    [Required(ErrorMessage = "Pulsar:CredentialProvider=AzureClientSecret requires Pulsar:TenantId.")]
+    public required string TenantId { get; init; }
+}
+```
+
+Do not rely on `required` alone with no `[Required]` attribute. `ConfigurationBinder` assigns properties via reflection and silently ignores the `required` modifier — a missing config key leaves the property `null` with no exception. The compile-time guarantee only protects object-initializer call sites (`new T { ... }`), not the binder, so a real config error goes undetected until something dereferences the null value downstream.
+
+Not every property on a `required`-using options type needs to be required. If a value has a legitimate fallback (env var, computed default, etc.), leave it optional and validate its *resolvability* separately via a supplementary `.Validate(...)` rather than its raw presence.
+
+`required` forces every existing `new T { ... }` call site to set that property — audit call sites that only exercise other properties on the same type; they'll need dummy values just to compile.
 
 ## Exception handling and control flow
 

@@ -56,7 +56,7 @@ Enforce C#/.NET-specific coding conventions — casing, project setup, using dir
 - Documentation minimalism (self-documenting names over comments, single-line summaries for public interfaces)
 - Global usings and using directive ordering
 - Namespace and folder structure alignment
-- Regex timeout requirements
+- Source-generated regex (`[GeneratedRegex]`) with required timeout
 - Pattern matching over null checks
 - CancellationToken propagation
 - Strongly typed `IOptions<T>` configuration
